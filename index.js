@@ -35,7 +35,7 @@ coinID.push("celostarter");
 coinID.push("sushi");
 coinID.push("moola-celo-atoken");
 
-let timeStamp = 1483207200, dateDDMMYYYY, historyData, tokenSymbolPrice = 0;; //01-01-2017
+let timeStamp = 1483207200, dateDDMMYYYY, historyData, tokenSymbolPriceUSD = 0, tokenSymbolPriceEUR = 0; //01-01-2017
 
 
 let workbook = new Excel.Workbook()
@@ -45,30 +45,31 @@ var func = async () => {
 
 
     for (let id in coinID) {
-        console.log(coinID[id],"\n");
+        console.log(coinID[id], "\n");
         let worksheet = workbook.addWorksheet(coinID[id]);
         worksheet.columns = [
-            { header: 'Date', key: 'date' },
-            { header: 'Price', key: 'price' },
-            { header: 'USD', key: 'usd' },
-            { header: 'EUR', key: 'eur' },
+            { header: 'Date', key: 'date', width: 15, style: { font: { name: 'Arial Black' } } },
+            { header: 'USD', key: 'usd', width: 20, style: { font: { name: 'Arial Black' } } },
+            { header: 'EUR', key: 'eur', width: 20, style: { font: { name: 'Arial Black' } } },
         ]
-        for (let i = timeStamp; i < (86400 * 2) + timeStamp; i = i + 86400) {
+        for (let i = timeStamp; i < Math.floor(Date.now() / 1000); i = i + 86400) {
 
             dateDDMMYYYY = dateConvertInDDMMYYYY(i);
             historyData = await CoinGeckoClient.coins.fetchHistory(coinID[id], {
                 date: dateDDMMYYYY
             });
-            if(typeof historyData.data.market_data !== "undefined") {
-                tokenSymbolPrice = historyData.data.market_data.current_price.usd;
+            if (typeof historyData.data.market_data !== "undefined") {
+                tokenSymbolPriceUSD = historyData.data.market_data.current_price.usd;
+                tokenSymbolPriceEUR = historyData.data.market_data.current_price.eur;
+                worksheet.addRow([dateDDMMYYYY, tokenSymbolPriceUSD, tokenSymbolPriceEUR]);
+                console.log(dateDDMMYYYY, "---", tokenSymbolPriceUSD, "---", tokenSymbolPriceEUR);
             }
+
             
-            worksheet.addRow([dateDDMMYYYY, tokenSymbolPrice, "USD"]);
-            console.log(dateDDMMYYYY, "---", tokenSymbolPrice)
         }
-        
+
     }
-    await workbook.xlsx.writeFile('test.xlsx')
+    await workbook.xlsx.writeFile('HistoricalPrice.xlsx')
     console.log("complete")
 
 }
