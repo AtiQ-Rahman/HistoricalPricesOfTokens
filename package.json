@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "coingecko-api": "1.0.10",
+    "coingecko-api-v3": "^0.0.13",
     "exceljs": "^4.3.0"
   }
 }
