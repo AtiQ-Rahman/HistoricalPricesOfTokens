@@ -76,8 +76,8 @@ var fetchHistory = async () => {
 
 
 var marketRange = async () => {
-    let fromDate=1638295200;
-    let toDate=1638727200;
+    let fromDate=1587405600;
+    let toDate=1589997600;
     for (let id in coinID) {
         console.log(coinID[id]);
         let worksheet = workbook.addWorksheet(coinID[id]);
