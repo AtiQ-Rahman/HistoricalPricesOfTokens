@@ -1,7 +1,7 @@
 const Excel = require('exceljs')
 const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko({
-    timeout: 900000,
+    timeout: 90000,
     autoRetry: true,
 });
 
@@ -38,50 +38,66 @@ coinID.push("celostarter");
 coinID.push("sushi");
 coinID.push("moola-celo-atoken");
 //Tue Apr 21 2020 18:00:00 GMT+0000
+//1587405600
 let timeStamp = 1587405600, dateDDMMYYYY, historyData, tokenSymbolPriceUSD = 0, tokenSymbolPriceEUR = 0;
 
-
+function sleep(milliseconds) {
+    const date = Date.now();
+    let currentDate = null;
+    do {
+      currentDate = Date.now();
+    } while (currentDate - date < milliseconds);
+  }
 let workbook = new Excel.Workbook()
+let index=0;
+
+    var fetchHistory = async () => {
 
 
-var fetchHistory = async () => {
+        for (let id in coinID) {
+            console.log(coinID[id], "\n");
+            let worksheet = workbook.addWorksheet(coinID[id]);
+            worksheet.columns = [
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'USD', key: 'usd', width: 20 },
+                { header: 'EUR', key: 'eur', width: 20 },
+            ]
+
+            for (let i = timeStamp; i < Math.floor(Date.now() / 1000); i = i + 86400) {
+                index++;
+                dateDDMMYYYY = dateConvertInDDMMYYYY(i);
+                if(index%50==0) {
+                    console.log('wait before');
+                    sleep(60000);
+                    console.log('wait after');
+                }
+
+                historyData = await CoinGeckoClient.coins.fetchHistory(coinID[id], {
+                    date: dateDDMMYYYY
+                });
 
 
-    for (let id in coinID) {
-        console.log(coinID[id], "\n");
-        let worksheet = workbook.addWorksheet(coinID[id]);
-        worksheet.columns = [
-            { header: 'Date', key: 'date', width: 15 },
-            { header: 'USD', key: 'usd', width: 20 },
-            { header: 'EUR', key: 'eur', width: 20 },
-        ]
 
-        for (let i = timeStamp; i < Math.floor(Date.now() / 1000); i = i + 86400) {
+                if (typeof historyData.data.market_data !== "undefined") {
+                    tokenSymbolPriceUSD = historyData.data.market_data.current_price.usd;
+                    tokenSymbolPriceEUR = historyData.data.market_data.current_price.eur;
 
-            dateDDMMYYYY = dateConvertInDDMMYYYY(i);
-            historyData = await CoinGeckoClient.coins.fetchHistory(coinID[id], {
-                date: dateDDMMYYYY
-            });
-            if (typeof historyData.data.market_data !== "undefined") {
-                tokenSymbolPriceUSD = historyData.data.market_data.current_price.usd;
-                tokenSymbolPriceEUR = historyData.data.market_data.current_price.eur;
-                
+                }
+                worksheet.addRow([dateDDMMYYYY, tokenSymbolPriceUSD, tokenSymbolPriceEUR]);
+                console.log(dateDDMMYYYY, "---", tokenSymbolPriceUSD, "---", tokenSymbolPriceEUR);
             }
-            worksheet.addRow([dateDDMMYYYY, tokenSymbolPriceUSD, tokenSymbolPriceEUR]);
-            console.log(dateDDMMYYYY, "---", tokenSymbolPriceUSD, "---", tokenSymbolPriceEUR);
+
         }
+        await workbook.xlsx.writeFile('HistoricalPrice.xlsx')
+        console.log("complete")
+
 
     }
-    await workbook.xlsx.writeFile('HistoricalPrice.xlsx')
-    console.log("complete")
-
-
-}
 
 
 var marketRange = async () => {
-    let fromDate=Math.floor(Date.now() / 1000)-86400;
-    let toDate=Math.floor(Date.now() / 1000);
+    let fromDate = Math.floor(Date.now() / 1000) - 86400;
+    let toDate = Math.floor(Date.now() / 1000);
     for (let id in coinID) {
         console.log(coinID[id]);
         let worksheet = workbook.addWorksheet(coinID[id]);
@@ -89,16 +105,16 @@ var marketRange = async () => {
             { header: 'Date', key: 'date', width: 15 },
             { header: 'EUR', key: 'eur', width: 20 },
         ]
-        
+
         let marketData = await CoinGeckoClient.coins.fetchMarketChartRange(coinID[id], {
             from: fromDate, //Tue Apr 21 2020 18:00:00 GMT+0000
-            
+
             to: toDate,//Mon Jun 29 2020 18:00:00 GMT+0000
-            vs_currencies: ['eur','usd'],
+            vs_currencies: ['eur', 'usd'],
         });
-        console.log(marketData,"market data")
+        console.log(marketData, "market data")
         if (typeof marketData.data.prices !== "undefined") {
-           // console.log(marketData.data.prices," Data");
+            // console.log(marketData.data.prices," Data");
             const pricingMap = new Map();
             for (let i in marketData.data.prices) {
                 var nameArr = marketData.data.prices[i].toString()
@@ -106,16 +122,16 @@ var marketRange = async () => {
                 nameArr = nameArr.split(',');
                 let date = dateConvertInDDMMYYYY(nameArr[0] / 1000);
                 pricingMap.set(date, nameArr[1]);
-    
+
             }
-            for (let i = fromDate; i < toDate+100; i = i + 86400) {
+            for (let i = fromDate; i < toDate + 100; i = i + 86400) {
                 console.log(dateConvertInDDMMYYYY(i), " Date - Price EUR", pricingMap.get(dateConvertInDDMMYYYY(i)));
-               // worksheet.addRow([dateConvertInDDMMYYYY(i), pricingMap.get(dateConvertInDDMMYYYY(i))]);
-               
+                // worksheet.addRow([dateConvertInDDMMYYYY(i), pricingMap.get(dateConvertInDDMMYYYY(i))]);
+
             }
         }
         else console.log("No Data");
-        
+
 
     }
     //await workbook.xlsx.writeFile(dateConvertInDDMMYYYY(fromDate)+'_HistoricalPriceJPY_'+dateConvertInDDMMYYYY(toDate)+'.xlsx')
