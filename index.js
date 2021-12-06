@@ -51,7 +51,7 @@ function sleep(milliseconds) {
 let workbook = new Excel.Workbook()
 let index=0;
 
-    var fetchHistory = async () => {
+var fetchHistory = async () => {
 
 
         for (let id in coinID) {
@@ -66,17 +66,19 @@ let index=0;
             for (let i = timeStamp; i < Math.floor(Date.now() / 1000); i = i + 86400) {
                 index++;
                 dateDDMMYYYY = dateConvertInDDMMYYYY(i);
-                if(index%50==0) {
+               
+                try {
+                    historyData = await CoinGeckoClient.coins.fetchHistory(coinID[id], {
+                        date: dateDDMMYYYY
+                    });
+
+                }
+                catch (e){
                     console.log('wait before');
                     sleep(60000);
                     console.log('wait after');
-                }
-
-                historyData = await CoinGeckoClient.coins.fetchHistory(coinID[id], {
-                    date: dateDDMMYYYY
-                });
-
-
+                    console.log(e)
+                  }
 
                 if (typeof historyData.data.market_data !== "undefined") {
                     tokenSymbolPriceUSD = historyData.data.market_data.current_price.usd;
