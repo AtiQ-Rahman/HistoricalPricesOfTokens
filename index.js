@@ -50,13 +50,19 @@ function sleep(milliseconds) {
 }
 let workbook = new Excel.Workbook()
 var fs = require('fs');
-let csvFormatData="";
+let flag = true;
+let csvFormatData;
+let halum=[];
 var writeCSV = async () => {
-    for (let i = timeStamp; i <Math.floor(Date.now() / 1000) ; i = i + 86400) {
-
+    let i;
+    for (i = timeStamp; i <timeStamp+(10*86400) ; i = i + 86400) {
+        if(flag==false){
+            halum.pop();
+            flag = true;
+        }
         dateDDMMYYYY = dateConvertInDDMMYYYY(i);
         console.log(dateDDMMYYYY,"---------Date")
-        csvFormatData+=dateDDMMYYYY+",";
+        csvFormatData=dateDDMMYYYY+",";
         let id;
         try {
             for (id in coinID) {
@@ -75,24 +81,32 @@ var writeCSV = async () => {
                 
                 console.log(coinID[id],"---",dateDDMMYYYY, "---", tokenSymbolPriceUSD, "---", tokenSymbolPriceEUR);
                 csvFormatData+=coinID[id]+","+tokenSymbolPriceUSD+"USD,"+tokenSymbolPriceEUR+"EUR,";
+               
+                
             }
-
+            
+            halum.push(csvFormatData);
         }
         catch (e) {
+            
+            flag=false;
             console.log('wait before');
-            id--;
-            sleep(30000);
+            i--;
+            sleep(60000);
             console.log('wait after');
             console.log(e)
         }
-        csvFormatData+="\n";
+        //csvFormatData+="\n";
+       
 
     }
-
-
+    let csv;
+    for(let l in halum ){
+        csv+=halum[l]+"\n";
+    }
     var stream = fs.createWriteStream("HistoricalPriceInSingleSheet.csv");
     stream.once('open', function (fd) {
-        stream.write(csvFormatData);
+        stream.write(csv);
 
         stream.end();
     });
