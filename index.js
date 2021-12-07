@@ -45,56 +45,102 @@ function sleep(milliseconds) {
     const date = Date.now();
     let currentDate = null;
     do {
-      currentDate = Date.now();
+        currentDate = Date.now();
     } while (currentDate - date < milliseconds);
-  }
+}
 let workbook = new Excel.Workbook()
-let index=0;
+var fs = require('fs');
+let csvFormatData="";
+var writeCSV = async () => {
+    for (let i = timeStamp; i <Math.floor(Date.now() / 1000) ; i = i + 86400) {
 
-var fetchHistory = async () => {
-
-
-        for (let id in coinID) {
-            console.log(coinID[id], "\n");
-            let worksheet = workbook.addWorksheet(coinID[id]);
-            worksheet.columns = [
-                { header: 'Date', key: 'date', width: 15 },
-                { header: 'USD', key: 'usd', width: 20 },
-                { header: 'EUR', key: 'eur', width: 20 },
-            ]
-
-            for (let i = timeStamp; i < Math.floor(Date.now() / 1000); i = i + 86400) {
-                index++;
-                dateDDMMYYYY = dateConvertInDDMMYYYY(i);
-               
-                try {
-                    historyData = await CoinGeckoClient.coins.fetchHistory(coinID[id], {
-                        date: dateDDMMYYYY
-                    });
-
-                }
-                catch (e){
-                    console.log('wait before');
-                    sleep(60000);
-                    console.log('wait after');
-                    console.log(e)
-                  }
-
+        dateDDMMYYYY = dateConvertInDDMMYYYY(i);
+       
+        csvFormatData+=dateDDMMYYYY+",";
+        let id;
+        try {
+            for (id in coinID) {
+                historyData = await CoinGeckoClient.coins.fetchHistory(coinID[id], {
+                    date: dateDDMMYYYY
+                });
                 if (typeof historyData.data.market_data !== "undefined") {
                     tokenSymbolPriceUSD = historyData.data.market_data.current_price.usd;
                     tokenSymbolPriceEUR = historyData.data.market_data.current_price.eur;
 
                 }
-                worksheet.addRow([dateDDMMYYYY, tokenSymbolPriceUSD, tokenSymbolPriceEUR]);
-                console.log(dateDDMMYYYY, "---", tokenSymbolPriceUSD, "---", tokenSymbolPriceEUR);
+                else {
+                    tokenSymbolPriceUSD = " ";
+                    tokenSymbolPriceEUR = " ";
+                }
+                
+                console.log(coinID[id],"---",dateDDMMYYYY, "---", tokenSymbolPriceUSD, "---", tokenSymbolPriceEUR);
+                csvFormatData+=coinID[id]+","+tokenSymbolPriceUSD+"USD,"+tokenSymbolPriceEUR+"EUR,";
             }
 
         }
-        await workbook.xlsx.writeFile('HistoricalPrice.xlsx')
-        console.log("complete")
-
+        catch (e) {
+            console.log('wait before');
+            id--;
+            sleep(30000);
+            console.log('wait after');
+            console.log(e)
+        }
+        csvFormatData+="\n";
 
     }
+
+
+    var stream = fs.createWriteStream("HistoricalPriceInSingleSheet.csv");
+    stream.once('open', function (fd) {
+        stream.write(csvFormatData);
+
+        stream.end();
+    });
+}
+var fetchHistory = async () => {
+
+
+    for (let id in coinID) {
+        console.log(coinID[id], "\n");
+        let worksheet = workbook.addWorksheet(coinID[id]);
+        worksheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'USD', key: 'usd', width: 20 },
+            { header: 'EUR', key: 'eur', width: 20 },
+        ]
+
+        for (let i = timeStamp; i < Math.floor(Date.now() / 1000); i = i + 86400) {
+            index++;
+            dateDDMMYYYY = dateConvertInDDMMYYYY(i);
+
+            try {
+                historyData = await CoinGeckoClient.coins.fetchHistory(coinID[id], {
+                    date: dateDDMMYYYY
+                });
+
+            }
+            catch (e) {
+                console.log('wait before');
+                sleep(60000);
+                console.log('wait after');
+                console.log(e)
+            }
+
+            if (typeof historyData.data.market_data !== "undefined") {
+                tokenSymbolPriceUSD = historyData.data.market_data.current_price.usd;
+                tokenSymbolPriceEUR = historyData.data.market_data.current_price.eur;
+
+            }
+            worksheet.addRow([dateDDMMYYYY, tokenSymbolPriceUSD, tokenSymbolPriceEUR]);
+            console.log(dateDDMMYYYY, "---", tokenSymbolPriceUSD, "---", tokenSymbolPriceEUR);
+        }
+
+    }
+    await workbook.xlsx.writeFile('HistoricalPrice.xlsx')
+    console.log("complete")
+
+
+}
 
 
 var marketRange = async () => {
@@ -152,5 +198,6 @@ function dateConvertInDDMMYYYY(ts) {
     var dateDDMMYYYY = date + "-" + month + "-" + year
     return dateDDMMYYYY;
 }
-fetchHistory();
+//fetchHistory();
 //marketRange();
+writeCSV();
