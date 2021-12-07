@@ -55,7 +55,7 @@ var writeCSV = async () => {
     for (let i = timeStamp; i <Math.floor(Date.now() / 1000) ; i = i + 86400) {
 
         dateDDMMYYYY = dateConvertInDDMMYYYY(i);
-       
+        console.log(dateDDMMYYYY,"---------Date")
         csvFormatData+=dateDDMMYYYY+",";
         let id;
         try {
