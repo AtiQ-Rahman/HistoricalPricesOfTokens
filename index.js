@@ -80,7 +80,7 @@ var writeCSV = async () => {
         }
         catch (e) {
             console.log('wait before');
-            id--;
+            i--;
             sleep(30000);
             console.log('wait after');
             console.log(e)
