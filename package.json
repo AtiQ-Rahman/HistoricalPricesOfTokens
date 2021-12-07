@@ -11,6 +11,8 @@
   "dependencies": {
     "coingecko-api": "1.0.10",
     "coingecko-api-v3": "^0.0.13",
-    "exceljs": "^4.3.0"
+    "exceljs": "^4.3.0",
+    "fast-csv": "^4.3.6",
+    "fs": "^0.0.1-security"
   }
 }
