@@ -53,12 +53,15 @@ var fs = require('fs');
 let flag = true;
 let csvFormatData;
 let halum=[];
+let index=86400;
+const pricingMap = new Map();
 var writeCSV = async () => {
     let i;
-    for (i = timeStamp; i <timeStamp+(10*86400) ; i = i + 86400) {
-        if(flag==false){
-            halum.pop();
-            flag = true;
+    for (i = timeStamp; i < Math.floor(Date.now() / 1000) ; i = i + 86400) {
+       
+        index+=86400;
+        if(index!=i){
+
         }
         dateDDMMYYYY = dateConvertInDDMMYYYY(i);
         console.log(dateDDMMYYYY,"---------Date")
@@ -84,14 +87,14 @@ var writeCSV = async () => {
                
                 
             }
-            
-            halum.push(csvFormatData);
+            pricingMap.set(dateDDMMYYYY,csvFormatData);
+            //halum.push(csvFormatData);
         }
         catch (e) {
             
             flag=false;
             console.log('wait before');
-            i--;
+            i=i-86400;
             sleep(60000);
             console.log('wait after');
             console.log(e)
@@ -101,8 +104,9 @@ var writeCSV = async () => {
 
     }
     let csv;
-    for(let l in halum ){
-        csv+=halum[l]+"\n";
+    for(i = timeStamp; i < Math.floor(Date.now() / 1000) ; i = i + 86400){
+        pricingMap.get(dateConvertInDDMMYYYY(i));
+        csv+=  pricingMap.get(dateConvertInDDMMYYYY(i))+"\n";
     }
     var stream = fs.createWriteStream("HistoricalPriceInSingleSheet.csv");
     stream.once('open', function (fd) {
@@ -110,6 +114,7 @@ var writeCSV = async () => {
 
         stream.end();
     });
+    console.log("Complete");
 }
 var fetchHistory = async () => {
 
